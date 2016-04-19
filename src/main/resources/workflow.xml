@@ -1,0 +1,615 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap>
+    <typeAlias alias="FormData" type="com.erae.mig.wiseone.model.FormData"/>
+    
+	<resultMap id="masterInfoMap" class="java.util.HashMap">
+	    <result property="sourceId"    column="sourceId"    javaType="String"/>
+	    <result property="form_seq"    column="form_seq"    javaType="String"/>
+	    <result property="woYear"      column="woYear"      javaType="String"/>
+	    <result property="woMonth"     column="woMonth"     javaType="String"/>
+	    <result property="isReceipt"   column="isReceipt"   javaType="String"/>
+	    <result property="title"       column="title"       javaType="String"/>
+        <result property="isPublic"    column="isPublic"    javaType="String"/>
+        <result property="docNum"      column="docNum"      javaType="String"/>
+        <result property="docType"     column="docType"     javaType="String"/>
+        <result property="createdAt"   column="createdAt"   javaType="String"/>
+	    <result property="receivedAt"  column="receivedAt"  javaType="String"/>
+	    <result property="updatedAt"   column="updatedAt"   javaType="String"/>
+        <result property="docYear"     column="docYear"     javaType="String"/>
+        <result property="docStatus"   column="docStatus"   javaType="String"/>
+        <result property="completedAt" column="completedAt" javaType="String"/>
+        <result property="docBody"     column="docBody"     jdbcType="CLOB" javaType="String"/>
+	</resultMap>
+	
+	<select id="getSancList" parameterClass="Map" resultMap="masterInfoMap">
+		select t1.sanc_id                                                 as sourceId,
+		       t1.form_seq                                                as form_seq,
+		       to_char(t1.create_date,'yyyy')                             as woYear,
+		       to_char(t1.create_date,'mm')                               as woMonth, 
+		       t1.subject                                                 as title,
+		       case when t1.security_flag = '1' then 'false' else 'true' end as isPublic,
+		       decode(t1.status,'012',t1.receipt_num,'010',t1.receipt_num,t1.docu_num) as docNum,
+		       nvl2(t1.copied_sanc_id,'true','false')                     as isReceipt,
+		       case when t1.status = '002' then 'DRAFT'
+		            else 'RECEIVE' end                                    as docType,
+		       to_char(t1.create_date,'yyyy-mm-dd hh24:mi:ss')            as createdAt,
+		       case when t1.status = '002' then ''
+		            else to_char(t1.create_date,'yyyy-mm-dd hh24:mi:ss') end as receivedAt,
+		       case when t1.update_date is null then
+		            to_char(t1.create_date,'yyyy-mm-dd hh24:mi:ss')
+		            else to_char(t1.update_date,'yyyy-mm-dd hh24:mi:ss') end as updatedAt,
+		       case when t1.stored_flag = '0' then '0'
+		            when t1.stored_flag = '1' then '1'
+		            when t1.stored_flag = '2' then '2'
+		            when t1.stored_flag = '3' then '3'
+		            when t1.stored_flag = '4' then '5'
+		            when t1.stored_flag = '5' then '10'
+		            when t1.stored_flag = '6' then '10'
+		            else '5' end                                           as docYear,
+		       'COMPLETE'                                                  as docStatus,
+		       to_char(t1.close_date,'yyyy-mm-dd hh24:mi:ss')              as completedAt,
+		       t1.contents                                                 as docBody
+		  from wo00139.tsa2010 t1
+		 where 1=1
+		 and   t1.create_date between to_date(#start_date#,'yyyy-mm-dd') and to_date(#end_date#,'yyyy-mm-dd')
+		 and   t1.status in ('002','010','012')
+		 and   t1.deleteyn = '0' 
+	</select>
+	
+	<resultMap id="lineInfoMap" class="java.util.HashMap">
+	    <result property="emailId"      column="emailId"      javaType="String"/>
+	    <result property="empNo"        column="empNo"        javaType="String"/>
+        <result property="name"         column="name"         javaType="String"/>
+        <result property="positionName" column="positionName" javaType="String"/>
+        <result property="deptCode"     column="deptCode"     javaType="String"/>
+        <result property="deptName"     column="deptName"    javaType="String"/>
+	</resultMap>
+	
+	<select id="getDrafter" parameterClass="String" resultMap="lineInfoMap">
+		select t2.userid             as emailId,
+		       t2.empno              as empNo,
+		       t1.writer_name        as name,
+		       t1.writer_pos_name    as positionName,
+		       t1.writer_dept_code   as deptCode,
+		       t1.writer_dept_name    as deptName
+		  from wo00139.tsa2010 t1,
+		       wo00139.tor1030 t2
+		 where t1.create_user = t2.userindex
+		 and   t1.sanc_id     = #sanc_id#
+		 
+	</select>
+
+	<select id="getReceiver" parameterClass="String" resultMap="lineInfoMap">
+		select t3.userid             as emailId,
+		       t3.empno              as empNo,
+		       t3.user_name        as name,
+		       t3.pos_name    as positionName,
+		       t3.dept_code   as deptCode,
+		       t3.dept_name    as deptName
+		  from wo00139.tsa2010 t1,
+               wo00139.tsa2013 t2,
+		       wo00139.vor1030 t3
+		 where t1.sanc_id      = t2.sanc_id
+		 and   t2.receipt_user = t3.userindex
+		 and   t2.dept_code    = t3.dept_code
+		 and   t2.receipt_status = '1'
+		 and   t1.sanc_id     = #sanc_id#
+		 and   t3.locale = 'ko_KR'
+	</select>
+
+	<resultMap id="actInfoMap" class="java.util.HashMap">
+	    <result property="type"          column="type"          javaType="String"/>
+	    <result property="actionLogType" column="actionLogType" javaType="String"/>
+	    <result property="actionDate"    column="actionDate"    javaType="String"/>
+	    <result property="emailId"       column="emailId"       javaType="String"/>
+	    <result property="empNo"         column="empNo"         javaType="String"/>
+        <result property="name"          column="name"          javaType="String"/>
+        <result property="positionName"  column="positionName"  javaType="String"/>
+        <result property="deptCode"      column="deptCode"      javaType="String"/>
+        <result property="deptName"      column="deptName"      javaType="String"/>
+        <result property="deputyUser"    column="deputyUser"    javaType="String"/>
+   	    <result property="actionComment" column="actionComment" javaType="String"/>
+	</resultMap>
+	<select id="getActivities" parameterClass="String" resultMap="actInfoMap">
+		select case when t2.sanc_type = '000' then 'DRAFT'
+		            when t2.sanc_type = '010' then 'DRAFT'
+		            when t2.sanc_type = '001' then 'APPROVAL'
+		            when t2.sanc_type = '002' then 'APPROVAL'
+		            when t2.sanc_type = '101' then 'APPROVAL'
+		            when t2.sanc_type = '102' then 'APPROVAL'
+		            when t2.sanc_type = '009' then 'APPROVAL'
+		            when t2.sanc_type = '109' then 'APPROVAL'
+		            when t2.sanc_type = '003' then 'AGREEMENT'
+		            when t2.sanc_type = '004' then 'AGREEMENT'
+		            when t2.sanc_type = '103' then 'AGREEMENT'
+		            when t2.sanc_type = '104' then 'AGREEMENT'
+		            else 'CHECK' end as type,
+	      case when t2.sanc_type = '000' and t2.progress = '002' then 'DRAFT'
+		           when t2.sanc_type = '010' and t2.progress = '002' then 'DRAFT'    
+		           when t2.sanc_type = '001' and t2.progress = '002' then 'APPROVAL' 
+		           when t2.sanc_type = '009' and t2.progress = '002' then 'APPROVAL'
+		           when t2.sanc_type = '001' and t2.progress = '003' then 'RETURN' 
+		           when t2.sanc_type = '009' and t2.progress = '003' then 'RETURN'
+		           when t2.sanc_type = '101' and t2.progress = '002' then 'APPROVAL' 
+		           when t2.sanc_type = '109' and t2.progress = '002' then 'APPROVAL'
+		           when t2.sanc_type = '101' and t2.progress = '003' then 'RETURN' 
+		           when t2.sanc_type = '109' and t2.progress = '003' then 'RETURN'
+		           when t2.sanc_type = '003' and t2.progress = '002' then 'AGREEMENT'
+		           when t2.sanc_type = '004' and t2.progress = '002' then 'AGREEMENT'
+		           when t2.sanc_type = '003' and t2.progress = '003' then 'OPPOSITION'
+		           when t2.sanc_type = '004' and t2.progress = '003' then 'OPPOSITION'
+		           when t2.sanc_type = '103' and t2.progress = '002' then 'AGREEMENT'
+		           when t2.sanc_type = '104' and t2.progress = '002' then 'AGREEMENT'
+		           when t2.sanc_type = '103' and t2.progress = '003' then 'OPPOSITION'
+		           when t2.sanc_type = '104' and t2.progress = '003' then 'OPPOSITION'
+		           else '' end actionLogType,		           
+               to_char(t2.sanc_date,'yyyy-mm-dd hh24:mi:ss') as actionDate,
+		       t3.userid             as emailId,
+		       t3.empno              as empNo,
+		       t2.line_user_name        as name,
+		       t2.line_pos_name    as positionName,
+		       t2.line_dept_code   as deptCode,
+		       t2.line_dept_name    as deptName,
+		       t2.update_user  as deputyUser,
+		       wo00139.f_opinion_comment(t1.sanc_id, t2.line_userindex) as actionComment
+		  from wo00139.tsa2010 t1,
+               wo00139.tsa2011 t2,
+		       wo00139.tor1030 t3
+		 where t1.sanc_id        = t2.sanc_id
+		 and   t2.line_userindex = t3.userindex
+		 and   t1.sanc_id        = #sanc_id#
+	</select>
+	
+	<resultMap id="refInfoMap" class="java.util.HashMap">
+	    <result property="sourceId"   column="sourceId"   javaType="String"/>
+	    <result property="targetId"   column="targetId"   javaType="String"/>
+	</resultMap>    
+	<select id="getOrignDocumentId" parameterClass="String" resultMap="refInfoMap">
+		select t1.copied_sanc_id as sourceId,
+		       ''                as targetId
+		  from wo00139.tsa2010 t1
+		 where t1.sanc_id     = #sanc_id#
+	</select>
+
+
+	<select id="getFormInfo" parameterClass="String" resultClass="FormData">
+        select form_seq     as seq,
+	           form_id      as "index",
+	           form_ver     as "version",
+	           form_name    as "name",
+	           form_content as "content",
+	           form_desc    as description,
+	           receipt,
+	           deleteyn     as deleteState,
+	           create_date  as createDate,
+	           create_user  as createUser,
+	           update_date  as updateDate,
+	           update_user  as updateUser,
+	           formbox_id   as categoryIndex
+         from  wo00139.tsa1011
+  	     where form_seq = to_number(#seq#)
+	</select>
+
+    <resultMap id="sanclineMap" class="java.util.HashMap">
+        <result property="wowf_line_comp_code" column="wowf_line_comp_code" jdbcType="VARCHAR"/>
+        <result property="wowf_line_comp_name" column="wowf_line_comp_name" jdbcType="VARCHAR"/>
+        <result property="wowf_line_dept_code" column="wowf_line_dept_code" jdbcType="VARCHAR"/>
+        <result property="wowf_line_dept_name" column="wowf_line_dept_name" jdbcType="VARCHAR"/>
+        <result property="wowf_line_pos_code" column="wowf_line_pos_code" jdbcType="VARCHAR"/>
+        <result property="wowf_line_pos_name" column="wowf_line_pos_name" jdbcType="VARCHAR"/>
+        <result property="wowf_line_userindex" column="wowf_line_userindex" jdbcType="VARCHAR"/>
+        <result property="wowf_line_user_name" column="wowf_line_user_name" jdbcType="VARCHAR"/>
+        <result property="wowf_sanc_date" column="wowf_sanc_date" jdbcType="VARCHAR"/>
+        <result property="wowf_line_sanc_type" column="wowf_line_sanc_type" jdbcType="VARCHAR"/>
+        <result property="wowf_line_sanc_type_name" column="wowf_line_sanc_type_name" jdbcType="VARCHAR"/>
+        <result property="wowf_progress" column="wowf_progress" jdbcType="VARCHAR"/>
+        <result property="wowf_sanc_auth" column="wowf_sanc_auth"  jdbcType="VARCHAR"/>
+        <result property="wowf_sancyn" column="wowf_sancyn"  jdbcType="VARCHAR"/>
+        <result property="wowf_line_sign" column="wowf_line_sign"  jdbcType="VARCHAR"/>
+        <result property="wowf_sanc_modify" column="wowf_sanc_modify"  jdbcType="VARCHAR"/>
+        <result property="wowf_sort_seq" column="wowf_sort_seq"  jdbcType="VARCHAR"/>
+        <result property="wowf_instead_status" column="wowf_instead_status"  jdbcType="VARCHAR"/>
+        <result property="wowf_origin_sanc_auth" column="wowf_origin_sanc_auth"  jdbcType="VARCHAR"/>
+        <result property="wowf_user_auth" column="wowf_user_auth"  jdbcType="VARCHAR"/>
+        <result property="wowf_sanc_type_ext" column="wowf_sanc_type_ext"  jdbcType="VARCHAR"/>
+        <result property="wowf_extend_name" column="wowf_extend_name"  jdbcType="VARCHAR"/>
+        <result property="wowf_line_initiative_type" column="wowf_line_initiative_type"  jdbcType="VARCHAR"/>
+        <result property="wowf_has_opinion" column="wowf_has_opinion"  jdbcType="VARCHAR"/>
+    </resultMap>
+    
+    <select id="getSancLine" remapResults="true" parameterClass="String" resultMap="sanclineMap">
+        select t2.line_company_code                              as wowf_line_comp_code,
+               t2.line_company_name                              as wowf_line_comp_name,
+               t2.line_dept_code                                 as wowf_line_dept_code,
+               t2.line_dept_name                                 as wowf_line_dept_name,
+               t2.line_pos_code                                  as wowf_line_pos_code,
+               t2.line_pos_name                                  as wowf_line_pos_name,
+               t2.line_userindex                                 as wowf_line_userindex,
+               CASE WHEN t2.sancyn = 1 AND t2.update_user IS NOT NULL THEN 
+                 (SELECT user_name FROM wo00139.vor1030 v1 WHERE USERINDEX = t2.update_user AND locale = 'ko_KR' AND plural = '0') 
+               ELSE t2.line_user_name END                        as wowf_line_user_name,
+               decode(t2.sancyn,'0','',to_char(t2.sanc_date,'yyyy-mm-dd hh24:mi:ss')) as wowf_sanc_date, 
+               t2.sanc_type                                      as wowf_line_sanc_type,
+               t5.sanctype_name                                  as wowf_line_sanc_type_name,
+               t2.progress                                       as wowf_progress,
+               '1'                                               as wowf_sanc_auth,
+               t2.sancyn                                         as wowf_sancyn,
+               case when t4.file_content_type = 'image/bmp' then t2.line_userindex||'.bmp'
+                    when t4.file_content_type = 'image/jpeg' then t2.line_userindex||'.jpg'
+                    when t4.file_content_type = 'image/png' then t2.line_userindex||'.png'
+                    when t4.file_content_type = 'image/tiff' then t2.line_userindex||'.tif'
+                    when t4.file_content_type = 'image/x-png' then t2.line_userindex||'.png'
+                    when t4.file_content_type = 'image/pjpeg' then t2.line_userindex||'.jpg'
+                    when t4.file_content_type = 'image/gif' then t2.line_userindex||'.gif'
+                    else 'none' end as wowf_line_sign,
+               '1'                                              as wowf_sanc_modify,
+               to_char(t2.sanc_seq)                              as wowf_sort_seq,
+               '1'                                               as wowf_instead_status,
+               t2.sanc_auth as wowf_origin_sanc_auth,
+               t5.mod_auth as wowf_user_auth,
+               t2.sanc_type_ext as wowf_sanc_type_ext,
+               '' as wowf_extend_name,
+               '' as wowf_line_initiative_type,
+               ''                                                as wowf_has_opinion
+          from wo00139.tsa2010 t1
+               inner join wo00139.tsa2011 t2 on t1.sanc_id       = t2.sanc_id
+               left outer join wo00139.tsa3030 t3 on t2.line_userindex = t3.userindex and t3.defaultyn = '1' and t3.deleteyn = '0'
+               left outer join wo00139.ted2020 t4 on to_char(t3.sign_id) = t4.content_id and t4.object_type_id = '000009'
+               inner join wo00139.tsa0010 t5 on t5.sanctype_id = t2.sanc_type and t5.company_code = t1.writer_company_code
+         where t1.sanc_id = #wowf_sanc_id#
+           and t2.sanc_type not in ('003','004','007','008','100','101','102','105','109','901','902','904','905')
+         order by sanc_seq
+    </select>
+    
+    <select id="getAgreeLine" remapResults="true" parameterClass="String" resultMap="sanclineMap">
+        select t2.line_company_code                              as wowf_line_comp_code,
+               t2.line_company_name                              as wowf_line_comp_name,
+               t2.line_dept_code                                 as wowf_line_dept_code,
+               t2.line_dept_name                                 as wowf_line_dept_name,
+               t2.line_pos_code                                  as wowf_line_pos_code,
+               t2.line_pos_name                                  as wowf_line_pos_name,
+               t2.line_userindex                                 as wowf_line_userindex,
+               CASE WHEN t2.sancyn = 1 AND t2.update_user IS NOT NULL THEN 
+                 (SELECT user_name FROM wo00139.vor1030 v1 WHERE USERINDEX = t2.update_user AND locale = 'ko_KR' AND plural = '0') 
+               ELSE t2.line_user_name END                        as wowf_line_user_name,
+               decode(t2.sancyn,'0','',to_char(t2.sanc_date,'yyyy-mm-dd hh24:mi:ss')) as wowf_sanc_date, 
+               t2.sanc_type                                      as wowf_line_sanc_type,
+               t5.sanctype_name                                  as wowf_line_sanc_type_name,
+               t2.progress                                       as wowf_progress,
+               '1'                                               as wowf_sanc_auth,
+               t2.sancyn                                         as wowf_sancyn,
+               case when t4.file_content_type = 'image/bmp' then t2.line_userindex||'.bmp'
+                    when t4.file_content_type = 'image/jpeg' then t2.line_userindex||'.jpg'
+                    when t4.file_content_type = 'image/png' then t2.line_userindex||'.png'
+                    when t4.file_content_type = 'image/tiff' then t2.line_userindex||'.tif'
+                    when t4.file_content_type = 'image/x-png' then t2.line_userindex||'.png'
+                    when t4.file_content_type = 'image/pjpeg' then t2.line_userindex||'.jpg'
+                    when t4.file_content_type = 'image/gif' then t2.line_userindex||'.gif'
+                    else 'none' end as wowf_line_sign,
+               '1'                                              as wowf_sanc_modify,
+               to_char(t2.sanc_seq)                              as wowf_sort_seq,
+               '1'                                               as wowf_instead_status,
+               t2.sanc_auth as wowf_origin_sanc_auth,
+               t5.mod_auth as wowf_user_auth,
+               t2.sanc_type_ext as wowf_sanc_type_ext,
+               '' as wowf_extend_name,
+               '' as wowf_line_initiative_type,
+               ''                                                as wowf_has_opinion
+          from wo00139.tsa2010 t1
+               inner join wo00139.tsa2011 t2 on t1.sanc_id       = t2.sanc_id
+               left outer join wo00139.tsa3030 t3 on t2.line_userindex = t3.userindex and t3.defaultyn = '1' and t3.deleteyn = '0'
+               left outer join wo00139.ted2020 t4 on to_char(t3.sign_id) = t4.content_id and t4.object_type_id = '000009'
+               inner join wo00139.tsa0010 t5 on t5.sanctype_id = t2.sanc_type and t5.company_code = t1.writer_company_code
+         where t1.sanc_id = #wowf_sanc_id#
+           and t2.sanc_type in ('003','004','008','901','902','904')
+         order by t2.sanc_seq
+    </select>
+    
+    <select id="getReceiptLine" remapResults="true" parameterClass="String" resultMap="sanclineMap">
+        select t2.line_company_code                              as wowf_line_comp_code,
+               t2.line_company_name                              as wowf_line_comp_name,
+               t2.line_dept_code                                 as wowf_line_dept_code,
+               t2.line_dept_name                                 as wowf_line_dept_name,
+               t2.line_pos_code                                  as wowf_line_pos_code,
+               t2.line_pos_name                                  as wowf_line_pos_name,
+               t2.line_userindex                                 as wowf_line_userindex,
+               CASE WHEN t2.sancyn = 1 AND t2.update_user IS NOT NULL THEN 
+                 (SELECT user_name FROM wo00139.vor1030 v1 WHERE USERINDEX = t2.update_user AND locale = 'ko_KR' AND plural = '0') 
+               ELSE t2.line_user_name END                        as wowf_line_user_name,
+               decode(t2.sancyn,'0','',to_char(t2.sanc_date,'yyyy-mm-dd hh24:mi:ss')) as wowf_sanc_date, 
+               t2.sanc_type                                      as wowf_line_sanc_type,
+               t5.sanctype_name                                  as wowf_line_sanc_type_name,
+               t2.progress                                       as wowf_progress,
+               '1'                                               as wowf_sanc_auth,
+               t2.sancyn                                         as wowf_sancyn,
+               case when t4.file_content_type = 'image/bmp' then t2.line_userindex||'.bmp'
+                    when t4.file_content_type = 'image/jpeg' then t2.line_userindex||'.jpg'
+                    when t4.file_content_type = 'image/png' then t2.line_userindex||'.png'
+                    when t4.file_content_type = 'image/tiff' then t2.line_userindex||'.tif'
+                    when t4.file_content_type = 'image/x-png' then t2.line_userindex||'.png'
+                    when t4.file_content_type = 'image/pjpeg' then t2.line_userindex||'.jpg'
+                    when t4.file_content_type = 'image/gif' then t2.line_userindex||'.gif'
+                    else 'none' end as wowf_line_sign,
+               '1'                                              as wowf_sanc_modify,
+               to_char(t2.sanc_seq)                              as wowf_sort_seq,
+               '1'                                               as wowf_instead_status,
+               t2.sanc_auth as wowf_origin_sanc_auth,
+               t5.mod_auth as wowf_user_auth,
+               t2.sanc_type_ext as wowf_sanc_type_ext,
+               '' as wowf_extend_name,
+               '' as wowf_line_initiative_type,
+               ''                                                as wowf_has_opinion
+          from wo00139.tsa2010 t1
+               inner join wo00139.tsa2011 t2 on t1.sanc_id       = t2.sanc_id
+               left outer join wo00139.tsa3030 t3 on t2.line_userindex = t3.userindex and t3.defaultyn = '1' and t3.deleteyn = '0'
+               left outer join wo00139.ted2020 t4 on to_char(t3.sign_id) = t4.content_id and t4.object_type_id = '000009'
+               inner join wo00139.tsa0010 t5 on t5.sanctype_id = t2.sanc_type and t5.company_code = t1.writer_company_code
+         where t1.sanc_id = #wowf_sanc_id#
+           and t2.sanc_type in ('100','101','102','105','109')
+    </select>
+    
+    <select id="getOriginLine" remapResults="true" parameterClass="String" resultMap="sanclineMap">
+        select t2.line_company_code                              as wowf_line_comp_code,
+               t2.line_company_name                              as wowf_line_comp_name,
+               t2.line_dept_code                                 as wowf_line_dept_code,
+               t2.line_dept_name                                 as wowf_line_dept_name,
+               t2.line_pos_code                                  as wowf_line_pos_code,
+               t2.line_pos_name                                  as wowf_line_pos_name,
+               t2.line_userindex                                 as wowf_line_userindex,
+               CASE WHEN t2.sancyn = 1 AND t2.update_user IS NOT NULL THEN 
+                 (SELECT user_name FROM wo00139.vor1030 v1 WHERE USERINDEX = t2.update_user AND locale = 'ko_KR' AND plural = '0') 
+               ELSE t2.line_user_name END                        as wowf_line_user_name,
+               decode(t2.sancyn,'0','',to_char(t2.sanc_date,'yyyy-mm-dd hh24:mi:ss')) as wowf_sanc_date, 
+               t2.sanc_type                                      as wowf_line_sanc_type,
+               t4.sanctype_name                                  as wowf_line_sanc_type_name,
+               t2.progress                                       as wowf_progress,
+               '1' as wowf_sanc_auth,
+               t2.sancyn                                         as wowf_sancyn,
+               case when t2.sign_id = '-99' then  to_char(t2.sign_id) else to_char(t3.file_id)  end                  as wowf_line_sign,
+               '1' as wowf_sanc_modify,
+               to_char(t2.sanc_seq)                              as wowf_sort_seq,
+               '1' as wowf_instead_status,
+               t2.sanc_auth as wowf_origin_sanc_auth,
+               t4.mod_auth as wowf_user_auth,
+               t2.sanc_type_ext as wowf_sanc_type_ext,
+               t6.extend_name as wowf_extend_name,
+               '' as wowf_line_initiative_type,
+               '' as wowf_has_opinion
+          from wo00139.tsa2010 t1,
+               wo00139.tsa2011 t2,
+               wo00139.ted2020 t3,
+               wo00139.tsa0010 t4,
+               wo00139.tsa0011 t6
+         where t1.sanc_id = t2.sanc_id
+           and t2.sanc_type = t4.sanctype_id
+           and t2.sanc_id = #wowf_sanc_id#
+           and t2.line_company_code = t6.company_code(+)
+           and t2.sanc_type_ext = t6.seq (+)
+           and to_char(t2.sign_id) = t3.content_id(+)
+           and t3.object_type_id(+) = '000009'
+           and t1.writer_company_code = t4.company_code
+           <![CDATA[
+           and ((to_number(t2.sanc_type) < 100 and to_number(t1.status) < 10)
+            or (t2.sanc_type = '999')
+            or (to_number(t2.sanc_type) >= 100 and to_number(t1.status) >= 10)
+            or (to_number(t1.status) < 10      and t2.sanc_type in ('901','902','903','904','905')))
+           ]]>
+         order by sanc_seq
+    </select>
+    
+    <resultMap id="writerInfoMap" class="java.util.HashMap">
+        <result property="wowf_writer_comp_code" column="wowf_writer_comp_code" jdbcType="VARCHAR"/>
+        <result property="wowf_writer_comp_name" column="wowf_writer_comp_name" jdbcType="VARCHAR"/>    
+        <result property="wowf_writer_dept_code" column="wowf_writer_dept_code" jdbcType="VARCHAR"/>
+        <result property="wowf_writer_dept_name" column="wowf_writer_dept_name" jdbcType="VARCHAR"/>
+        <result property="wowf_writer_pos_code" column="wowf_writer_pos_code" jdbcType="VARCHAR"/>
+        <result property="wowf_writer_pos_name" column="wowf_writer_pos_name" jdbcType="VARCHAR"/>  
+        <result property="wowf_writer_userid" column="wowf_writer_userid" jdbcType="VARCHAR"/>
+        <result property="wowf_writer_userindex" column="wowf_writer_userindex" jdbcType="VARCHAR"/> 
+        <result property="wowf_writer_user_name" column="wowf_writer_user_name" jdbcType="VARCHAR"/>
+        <result property="wowf_writer_empno" column="wowf_writer_empno" jdbcType="VARCHAR"/>
+        <result property="wowf_writer_telno" column="wowf_writer_telno" jdbcType="VARCHAR"/>
+        <result property="wowf_writer_email" column="wowf_writer_email" jdbcType="VARCHAR"/>
+        <result property="wowf_writer_faxno" column="wowf_writer_faxno" jdbcType="VARCHAR"/>
+        <result property="wowf_mobile_no" column="wowf_mobile_no" jdbcType="VARCHAR"/>
+    </resultMap>
+    
+    <select id="getWrierInfo" parameterClass="String" resultMap="writerInfoMap">
+    select b.company_code     as wowf_writer_comp_code, 
+           b.company_name     as wowf_writer_comp_name, 
+           b.dept_code        as wowf_writer_dept_code, 
+           b.dept_name        as wowf_writer_dept_name, 
+           b.pos_code         as wowf_writer_pos_code,
+           b.pos_name         as wowf_writer_pos_name,
+           b.pos_code         as wowf_writer_pos_code,
+           b.nick_name        as wowf_writer_pos_name,
+           b.userid           as wowf_writer_userid,
+           b.userindex        as wowf_writer_userindex, 
+           b.user_name        as wowf_writer_user_name, 
+           b.empno            as wowf_writer_empno,
+           b.compphone_number as wowf_writer_telno,
+           b.email            as wowf_writer_email,
+           b.compfax_number   as wowf_writer_faxno,
+           b.mobile_number    as wowf_mobile_no
+      from wo00139.tsa2010 a,
+           wo00139.vor1030 b
+     where b.locale    = 'ko_KR'
+       and b.plural    = '0'
+       and a.create_user = b.userindex
+       and a.sanc_id = #wowf_sanc_id#
+    </select>
+
+
+    <resultMap id="documentInfoMap" class="java.util.HashMap">
+        <result property="wowf_sanc_id" column="wowf_sanc_id" />
+        <result property="wowf_form_seq" column="wowf_form_seq" />
+        <result property="wowf_form_id" column="wowf_form_id" />
+        <result property="wowf_docu_num" column="wowf_docu_num" />
+        <result property="wowf_enforce_date" column="wowf_enforce_date" />
+        <result property="wowf_subject" column="wowf_subject" />
+        <result property="wowf_content_data" column="wowf_content_data" jdbcType="CLOB" javaType="String"/>
+        <result property="wowf_write_date" column="wowf_write_date" />  
+        <result property="wowf_receipt" column="wowf_receipt" />
+        <result property="wowf_sanc_type" column="wowf_sanc_type" />
+        <result property="wowf_sanc_modify" column="wowf_sanc_modify" />
+        <result property="wowf_reporter_name" column="wowf_reporter_name" />
+        <result property="wowf_reporter_tellno" column="wowf_reporter_tellno" />
+        <result property="wowf_reporter_dept" column="wowf_reporter_dept" />
+        <result property="wowf_reporter_position" column="wowf_reporter_position" />
+        <result property="wowf_origin_sanc_id" column="wowf_origin_sanc_id" />
+        <result property="wowf_origin_form_seq" column="wowf_origin_form_seq" />
+        <result property="wowf_receipt_status" column="wowf_receipt_status" />
+        <result property="wowf_view_auth" column="wowf_view_auth" />
+        <result property="wowf_opinion" column="wowf_opinion" />
+        <result property="wowf_assign_num" column="wowf_assign_num" />
+        <result property="wowf_docu_status" column="wowf_docu_status" />
+        <result property="wowf_receipt_num" column="wowf_receipt_num" />
+        <result property="wowf_receipt_date" column="wowf_receipt_date" />
+        <result property="wowf_security_flag" column="wowf_security_flag" />
+        <result property="wowf_life_cycle" column="wowf_life_cycle" /> 
+    </resultMap>
+    <select id="getDocumentInfo" remapResults="true" parameterClass="String" resultMap="documentInfoMap">
+        select to_char(t1.sanc_id)                                         as wowf_sanc_id,
+               to_char(t1.form_seq)                                        as wowf_form_seq,
+               to_char(t4.form_id)                                         as wowf_form_id,
+               t1.docu_num                                                 as wowf_docu_num,
+               case when t1.status = '002' and t3.close_date is null then
+               '('|| to_char(t1.close_date,'yyyy. mm. dd.') || ')' else 
+               '('|| to_char(t3.close_date,'yyyy. mm. dd.') || ')' end     as wowf_enforce_date,
+               t1.subject                                                  as wowf_subject,
+               t1.contents                                                 as wowf_content_data,
+               to_char(t1.create_date,'yyyy-mm-dd hh24:mi:ss')             as wowf_write_date,
+               t1.receipt                                                  as wowf_receipt,
+               '000'                                                       as wowf_sanc_type,
+               '1'                                                         as wowf_sanc_modify,
+               t1.writer_name                                              as wowf_reporter_name,
+               t1.writer_tellno                                            as wowf_reporter_tellno,
+               t1.writer_dept_name                                         as wowf_reporter_dept,
+               t1.writer_pos_name                                          as wowf_reporter_position,
+               to_char(t1.origin_sanc_id)                                  as wowf_origin_sanc_id,
+               to_char(t1.origin_form_seq)                                 as wowf_origin_form_seq,
+               decode(t1.status,'010','2','011','2','013','2','0')          as wowf_receipt_status,
+               '1'  as wowf_view_auth,
+               '0'                      as wowf_opinion,
+               ''               as wowf_assign_num,
+               t1.status                                                   as wowf_docu_status,
+               t1.receipt_num                                              as wowf_receipt_num,
+               case when t1.receipt_num is null then
+               '' 
+               else
+               '('|| to_char(t1.create_date,'yyyy. mm. dd.') || ')' end    as wowf_receipt_date,
+               t1.security_flag                                            as wowf_security_flag,
+               t1.stored_flag                                              as wowf_life_cycle
+          from wo00139.tsa2010 t1 
+               left outer join wo00139.tsa2010 t3 on t1.copied_sanc_id = t3.sanc_id
+               left join wo00139.tsa1011 t4 on t1.form_seq = t4.form_seq
+         where t1.sanc_id = #wowf_sanc_id#
+    </select>
+
+    <resultMap id="sancOptionMap" class="java.util.HashMap">
+        <result property="wowf_notice_flag" column="wowf_notice_flag" />
+        <result property="wowf_life_cycle" column="wowf_life_cycle" />
+        <result property="wowf_emergency_yn" column="wowf_emergency_yn" />
+        <result property="wowf_edms_flag" column="wowf_edms_flag" />
+        <result property="wowf_security_flag" column="wowf_security_flag" />
+        <result property="wowf_docu_category" column="wowf_docu_category" />
+    </resultMap>
+    <select id="getOptionInfo" parameterClass="String" resultMap="sancOptionMap">
+        select notice_flag    as wowf_notice_flag,
+               stored_flag    as wowf_life_cycle,
+               emergency      as wowf_emergency_yn,
+               edmsyn         as wowf_edms_flag,
+               security_flag  as wowf_security_flag,
+               category_code as wowf_docu_category
+          from wo00139.tsa2010
+         where sanc_id = #wowf_sanc_id#
+    </select>
+
+    <resultMap id="getOpinionMsp" class="java.util.HashMap">
+        <result property="infos" column="infos" />
+    </resultMap>
+    
+    <select id="getOpinionList" parameterClass="String" resultMap="getOpinionMsp">
+        select <![CDATA['<B>[']]> || user_name || ':' || approval_date || ']<![CDATA[</B><P>']]> || approval_opinion || <![CDATA['<P>']]> as infos from (
+		    select t1.sanc_id, t1.sanc_seq, to_char(t1.approval_date,'yyyy-mm-dd') as approval_date, replace(t1.approval_opinion,chr(10),<![CDATA['<br>']]>) as approval_opinion, nvl(v1.user_name,'n/a') as user_name
+			from   wo00139.tsa2030 t1, 
+			       wo00139.vor1030 v1
+			where  t1.userindex = v1.userindex
+			and    t1.sanc_id  in (select ta.reuse_sanc_id from wo00139.tsa2031 ta, wo00139.tsa2010 tb where ta.reuse_sanc_id = tb.sanc_id and tb.status in ('003','013') and ta.sanc_id = #wowf_sanc_id#)
+			and    t1.deleteyn = 0
+			and    t1.approval_opinion is not null
+			and    v1.plural = '0'
+			and    v1.locale = 'ko_KR'
+			
+			union all   
+			
+			select t1.sanc_id, t1.sanc_seq, to_char(t1.approval_date,'yyyy-mm-dd') as approval_date, replace(t1.approval_opinion,chr(10),<![CDATA['<br>']]>) as approval_opinion, nvl(v1.user_name,'n/a') as user_name
+			from   wo00139.tsa2030 t1, 
+			       wo00139.vor1030 v1
+			where  t1.userindex = v1.userindex
+			and    t1.sanc_id  = #wowf_sanc_id#
+			and    t1.deleteyn = 0
+			and    t1.approval_opinion is not null
+			and    v1.plural = '0'
+			and    v1.locale = 'ko_KR')
+		order by sanc_id, sanc_seq
+    </select>
+    
+    <resultMap id="getAttachMap" class="java.util.HashMap">
+        <result property="path" column="path" />
+    </resultMap>
+    
+    <select id="getAttaches" parameterClass="String" resultMap="getAttachMap">
+        select 'file:///export/migration/attaches/'|| to_char(t1.create_date,'yyyy')||'/'||to_char(t1.create_date,'mm') || '/'|| t2.document_id as path
+        from   wo00139.tsa2010 t1, wo00139.tdm1046 t2, wo00139.tdm1040 t3
+        where  t1.sanc_id     = t2.content_id
+        and    t2.document_id = t3.document_id
+        and    t2.content_id  = #wowf_sanc_id#
+    </select>
+    
+	<select id="getDeputyUser" parameterClass="Map" resultMap="lineInfoMap">
+		select t3.userid             as emailId,
+		       t3.empno              as empNo,
+		       t3.user_name        as name,
+		       t3.pos_name    as positionName,
+		       t3.dept_code   as deptCode,
+		       t3.dept_name    as deptName
+		  from wo00139.tsa2010 t1,
+               wo00139.tsa2011 t2,
+		       wo00139.vor1030 t3,
+		       wo00139.tor1030 t4
+		 where t1.sanc_id      = t2.sanc_id
+		 and   t2.update_user  = t3.userindex
+		 and   t2.line_userindex  = t4.userindex
+		 and   t1.sanc_id      = #wowf_sanc_id#
+		 and   t2.update_user  = #deputyUser#
+		 and   t4.empno  = #empNo#
+		 and   t3.locale = 'ko_KR'
+	</select>
+	
+    <resultMap id="sealMap" class="java.util.HashMap">
+        <result property="userindex" column="userindex" />
+        <result property="old_path" column="old_path" />
+        <result property="line_sign" column="line_sign" />
+    </resultMap>	
+    <select id="getSeqlImgList" remapResults="true" parameterClass="String" resultMap="sealMap">
+    select t1.userindex,
+           t2.file_path||t2.file_name        as old_path,
+           case when t2.file_content_type = 'image/bmp' then t1.userindex||'.bmp'
+                when t2.file_content_type = 'image/jpeg' then t1.userindex||'.jpg'
+                when t2.file_content_type = 'image/png' then t1.userindex||'.png'
+                when t2.file_content_type = 'image/tiff' then t1.userindex||'.tif'
+                when t2.file_content_type = 'image/x-png' then t1.userindex||'.png'
+                when t2.file_content_type = 'image/pjpeg' then t1.userindex||'.jpg'
+                when t2.file_content_type = 'image/gif' then t1.userindex||'.gif'
+                else 'none' end              as line_sign
+    from   wo00139.tsa3030 t1,
+           wo00139.ted2020 t2
+    where  t2.content_id = to_char(t1.sign_id)
+    and    t1.deleteyn = '0' and defaultyn = '1'
+    and    t2.object_type_id = '000009'
+    </select>
+    
+</sqlMap>
