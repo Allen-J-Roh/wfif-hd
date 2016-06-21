@@ -68,7 +68,7 @@ public class MigBuilder {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		Log.log("[ WF Migration job End !! at " + System.currentTimeMillis() + "  ]", Log.INFO);
+		Log.log("[ WF Migration job End !! at " + System.currentTimeMillis() + ", START_DATE : "+ STARTDATE + "  ]", Log.INFO);
 	}
 	
 	public void runSealMig() {

@@ -53,9 +53,15 @@
 		       t1.contents                                                 as docBody
 		  from wo00139.tsa2010 t1
 		 where 1=1
+		 <!-- 
 		 and   t1.create_date between to_date(#start_date#,'yyyy-mm-dd') and to_date(#end_date#,'yyyy-mm-dd')
+		  -->
+		  and   t1.create_date between to_date('2016-02-01','yyyy-mm-dd') and to_date('2016-02-02','yyyy-mm-dd')
 		 and   t1.status in ('002','010','012')
 		 and   t1.deleteyn = '0' 
+		 and   t1.sanc_id != 602554
+		 and   rownum <![CDATA[< ]]> 10
+		 order by t1.sanc_id
 	</select>
 	
 	<resultMap id="lineInfoMap" class="java.util.HashMap">
@@ -73,7 +79,7 @@
 		       t1.writer_name        as name,
 		       t1.writer_pos_name    as positionName,
 		       t1.writer_dept_code   as deptCode,
-		       t1.writer_dept_name    as deptName
+		       replace(t1.writer_dept_name ,'/','-') as deptName
 		  from wo00139.tsa2010 t1,
 		       wo00139.tor1030 t2
 		 where t1.create_user = t2.userindex
@@ -160,6 +166,7 @@
 		 where t1.sanc_id        = t2.sanc_id
 		 and   t2.line_userindex = t3.userindex
 		 and   t1.sanc_id        = #sanc_id#
+		 order by  t2.sanc_seq
 	</select>
 	
 	<resultMap id="refInfoMap" class="java.util.HashMap">
@@ -230,7 +237,7 @@
                CASE WHEN t2.sancyn = 1 AND t2.update_user IS NOT NULL THEN 
                  (SELECT user_name FROM wo00139.vor1030 v1 WHERE USERINDEX = t2.update_user AND locale = 'ko_KR' AND plural = '0') 
                ELSE t2.line_user_name END                        as wowf_line_user_name,
-               decode(t2.sancyn,'0','',to_char(t2.sanc_date,'yyyy-mm-dd hh24:mi:ss')) as wowf_sanc_date, 
+               decode(t2.sancyn,'0','',to_char(t2.sanc_date,'yyyy-mm-dd')) as wowf_sanc_date, 
                t2.sanc_type                                      as wowf_line_sanc_type,
                t5.sanctype_name                                  as wowf_line_sanc_type_name,
                t2.progress                                       as wowf_progress,
@@ -274,7 +281,7 @@
                CASE WHEN t2.sancyn = 1 AND t2.update_user IS NOT NULL THEN 
                  (SELECT user_name FROM wo00139.vor1030 v1 WHERE USERINDEX = t2.update_user AND locale = 'ko_KR' AND plural = '0') 
                ELSE t2.line_user_name END                        as wowf_line_user_name,
-               decode(t2.sancyn,'0','',to_char(t2.sanc_date,'yyyy-mm-dd hh24:mi:ss')) as wowf_sanc_date, 
+               decode(t2.sancyn,'0','',to_char(t2.sanc_date,'yyyy-mm-dd')) as wowf_sanc_date, 
                t2.sanc_type                                      as wowf_line_sanc_type,
                t5.sanctype_name                                  as wowf_line_sanc_type_name,
                t2.progress                                       as wowf_progress,
@@ -318,7 +325,7 @@
                CASE WHEN t2.sancyn = 1 AND t2.update_user IS NOT NULL THEN 
                  (SELECT user_name FROM wo00139.vor1030 v1 WHERE USERINDEX = t2.update_user AND locale = 'ko_KR' AND plural = '0') 
                ELSE t2.line_user_name END                        as wowf_line_user_name,
-               decode(t2.sancyn,'0','',to_char(t2.sanc_date,'yyyy-mm-dd hh24:mi:ss')) as wowf_sanc_date, 
+               decode(t2.sancyn,'0','',to_char(t2.sanc_date,'yyyy-mm-dd')) as wowf_sanc_date, 
                t2.sanc_type                                      as wowf_line_sanc_type,
                t5.sanctype_name                                  as wowf_line_sanc_type_name,
                t2.progress                                       as wowf_progress,
@@ -361,7 +368,7 @@
                CASE WHEN t2.sancyn = 1 AND t2.update_user IS NOT NULL THEN 
                  (SELECT user_name FROM wo00139.vor1030 v1 WHERE USERINDEX = t2.update_user AND locale = 'ko_KR' AND plural = '0') 
                ELSE t2.line_user_name END                        as wowf_line_user_name,
-               decode(t2.sancyn,'0','',to_char(t2.sanc_date,'yyyy-mm-dd hh24:mi:ss')) as wowf_sanc_date, 
+               decode(t2.sancyn,'0','',to_char(t2.sanc_date,'yyyy-mm-dd')) as wowf_sanc_date, 
                t2.sanc_type                                      as wowf_line_sanc_type,
                t4.sanctype_name                                  as wowf_line_sanc_type_name,
                t2.progress                                       as wowf_progress,
@@ -559,10 +566,12 @@
     
     <resultMap id="getAttachMap" class="java.util.HashMap">
         <result property="path" column="path" />
+        <result property="name" column="name" />
     </resultMap>
     
     <select id="getAttaches" parameterClass="String" resultMap="getAttachMap">
-        select 'file:///export/migration/attaches/'|| to_char(t1.create_date,'yyyy')||'/'||to_char(t1.create_date,'mm') || '/'|| t2.document_id as path
+        select 'file:///export/migration/attaches/'|| to_char(t1.create_date,'yyyy')||'/'||to_char(t1.create_date,'mm') || '/'|| t2.document_id as path,
+               t3.name as name
         from   wo00139.tsa2010 t1, wo00139.tdm1046 t2, wo00139.tdm1040 t3
         where  t1.sanc_id     = t2.content_id
         and    t2.document_id = t3.document_id
@@ -587,6 +596,7 @@
 		 and   t2.update_user  = #deputyUser#
 		 and   t4.empno  = #empNo#
 		 and   t3.locale = 'ko_KR'
+		 and   t3.plural = '0'
 	</select>
 	
     <resultMap id="sealMap" class="java.util.HashMap">

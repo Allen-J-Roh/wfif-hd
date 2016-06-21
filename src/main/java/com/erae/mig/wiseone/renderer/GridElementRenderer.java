@@ -142,7 +142,7 @@ public class GridElementRenderer extends ChildElementRenderer {
 				GridColumnBean gridColumn = gridColumns.get(j);
 
 				Map<String, Object> attrMap = new HashMap<String, Object>();
-				attrMap.put("width", gridColumn.getWidth() - 1);
+				attrMap.put("width", (gridColumn.getWidth() - 1) + "px");
 				attrMap.put("background-color", elem.getBackgroundColor().toRGBString());
 				if (elem.isHeaderDisable() && i == 0) {
 					
@@ -157,7 +157,7 @@ public class GridElementRenderer extends ChildElementRenderer {
 
 				// 선의 크기로 인해 사이즈가 맞지 않는 현상이 발생하여 높이를 조절
 				if (i == elem.getRows() - 1) {
-					attrMap.put("height", DEFAULT_GRID_CELL_HEIGHT + 1);
+					attrMap.put("height", (DEFAULT_GRID_CELL_HEIGHT + 1) +"px");
 					attrMap.put("border-bottom", "1px solid black");
 				} else {
 					attrMap.put("height", DEFAULT_GRID_CELL_HEIGHT + "px" );

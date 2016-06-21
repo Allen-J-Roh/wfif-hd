@@ -93,7 +93,7 @@ public class WFLineInfoSetUtil {
     public String getApprovalImage(Map data) {
     	if (!"none".equals(data.get(IDataMapCode.SANC_SIGN_IMAGE))) {
     		try {
-    		    return "<img src=\"" + "file:///" + migconfig.getPropValues("repository") + File.separator+"images"+File.separator + data.get(IDataMapCode.SANC_SIGN_IMAGE) + "\">";
+    		    return "<img src=\"" + "file:///" + "/export/migration/images" + File.separator + data.get(IDataMapCode.SANC_SIGN_IMAGE) + "\">";
     		} catch(Exception e) {
     			return "<B><I>" + data.get(IDataMapCode.SANC_LINE_USER_NAME) + "</I></B>";
     		}

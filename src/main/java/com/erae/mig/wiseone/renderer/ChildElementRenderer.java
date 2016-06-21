@@ -38,10 +38,10 @@ public abstract class ChildElementRenderer implements IElementRenderer {
 	protected String convertHTMLStyle(RectangleBean layout) {
 		StringBuffer buffer = new StringBuffer();
 		buffer
-			.append("left:").append(layout.getX() + "px")
-			.append(";top:").append(layout.getY() + "px")
-			.append(";width:").append(layout.getWidth() + "px")
-			.append(";height:").append(layout.getHeight() + "px");
+			.append("left:").append(layout.getX()+"px")
+			.append(";top:").append(layout.getY()+"px")
+			.append(";width:").append(layout.getWidth()+"px")
+			.append(";height:").append(layout.getHeight()+"px");
 		
 		return buffer.toString();
 	}
@@ -133,10 +133,10 @@ public abstract class ChildElementRenderer implements IElementRenderer {
 		}
 
 		styleAttrMap.put("position", "absolute");
-		styleAttrMap.put("left", left + "px");
-		styleAttrMap.put("top", top + "px");
-		styleAttrMap.put("width", elem.getLayout().getWidth() + "px");
-		styleAttrMap.put("height", elem.getLayout().getHeight() + "px");
+		styleAttrMap.put("left", left+"px");
+		styleAttrMap.put("top", top+"px");
+		styleAttrMap.put("width", elem.getLayout().getWidth()+"px");
+		styleAttrMap.put("height", elem.getLayout().getHeight()+"px");
 		
 		return styleAttrMap;
 	}

@@ -27,7 +27,7 @@ public class ActiveXEditorElementRenderer extends ChildElementRenderer {
 		if (elem.isFlexible()) {
 			attrMap.put("wo_flexible", "true");
 			attrMap.put("wo_affected", elem.getAffectedElements());
-			attrMap.put("wo_height", elem.getLayout().getHeight()+ "px");
+			attrMap.put("wo_height", elem.getLayout().getHeight() +"px");
 		} else {
 			attrMap.put("class", "wo_html_element");
 		}
@@ -39,6 +39,8 @@ public class ActiveXEditorElementRenderer extends ChildElementRenderer {
 		
 		styleAttrMap.put("background-color", elem.getBackgroundColor().toRGBString());
 		styleAttrMap.put("border", elem.getBorderWidth() + "px solid " + elem.getBorderColor().toRGBString());
+		styleAttrMap.put("overflow", "auto");
+		
 		appendStyleAttribute(buffer, styleAttrMap);
 		buffer.append("><div class=\"wo_ax_html_element_inner\">");
 			

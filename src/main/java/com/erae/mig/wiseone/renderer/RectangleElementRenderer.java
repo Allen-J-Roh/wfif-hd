@@ -43,6 +43,10 @@ public class RectangleElementRenderer extends ChildElementRenderer {
             styleAttrMap.put("overflow", "auto");
         }
 
+        if (elementId.equals("rect_2")||elementId.equals("rect_20")||elementId.equals("text_7")) {
+        	styleAttrMap.put("z-index", "99999");
+        }
+        
         appendStyleAttribute(buffer, styleAttrMap);
         buffer.append(">");
 

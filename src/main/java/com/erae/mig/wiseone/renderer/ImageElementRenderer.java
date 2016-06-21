@@ -36,7 +36,7 @@ public class ImageElementRenderer extends ChildElementRenderer {
 			String[] f = str.split("\\/");
 			MigConfig migconfig = MigConfig.getInstance();
 			try {
-			    buffer.append("<img src=\"file:///").append(migconfig.getPropValues("repository")+File.separator+"images"+File.separator+"logos"+File.separator+f[3]).append("\" />");
+			    buffer.append("<img src=\"file:///").append("/export/migration/images"+File.separator+"logos"+File.separator+f[3]).append("\" />");
 			}catch(Exception e) {
 				e.printStackTrace();
 			}
